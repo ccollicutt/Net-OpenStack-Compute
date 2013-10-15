@@ -7,7 +7,9 @@ use Carp qw(croak);
 use JSON qw(from_json to_json);
 use LWP;
 use Pod::Select;
+#use lib '/home/curtis/Net-OpenStack-Compute';
 use Net::OpenStack::Compute;
+use Data::Dumper
 
 # Need to set this for App::Rad which prints to STDOUT
 binmode STDOUT, ':encoding(UTF-8)';
@@ -19,6 +21,7 @@ sub setup {
         server => 'perform server actions',
         image  => 'perform image actions',
         flavor => 'perform flavor actions',
+        live_image => 'perform live_image actions',
     });
     $c->register(s => \&server, 'alias for server');
     $c->register(i => \&image, 'alias for image');
@@ -136,6 +139,23 @@ sub image {
     }
 }
 
+sub live_image {
+    my $c = shift;
+    my $compute = $c->stash->{compute};
+    my @args = @{$c->argv};
+    my $sub_cmd = shift @args;
+    given ($sub_cmd) {
+        when ([undef, 'list']) { 
+	    my $server = $args[0];
+	    return _get_live_image($c, $server);
+	}
+        default {
+            die "Supported flavor commands are list, show, create and delete."
+                . "\n";
+        }
+    }
+}
+
 sub flavor {
     my $c = shift;
     my $compute = $c->stash->{compute};
@@ -155,6 +175,16 @@ sub flavor {
                 . "\n";
         }
     }
+}
+
+sub _get_live_image {
+    my ($c, $id) = @_;
+    die "_get_live_image Server id is missing.\n" unless defined $id;
+    my $compute = $c->stash->{compute};
+    my $q = $c->options->{query};
+    my $images = $compute->list_blessed($c, $id);
+    return _to_json($images) if $c->options->{verbose};
+    return _format_images(@$images);
 }
 
 sub _get_server {
@@ -210,7 +240,7 @@ sub _format_flavors {
 
 sub _get_ip {
     my $server = shift;
-    for my $addr (map @{$server->{addresses}{$_} || []}, qw(public private)) {
+    for my $addr (map @{$server->{addresses}{$_} || []}, qw(public private private_0)) {
         return $addr->{addr} if $addr->{version} == 4;
     }
     return 'IP-MISSING';
@@ -246,6 +276,7 @@ sub _parse_pod {
         image       perform image actions
         s           alias for server
         server      perform server actions
+	live_image  perform live image actions
 
     Examples:
 
@@ -304,6 +335,14 @@ sub _parse_pod {
     Flavor commands:
         flavor [list]
         flavor show <flavor-id>
+
+    Live image commands:
+	live_image create <instance-id>
+	live_image delete <image-id>
+	live_image migrate <dest>
+	live_image list <instance-id>
+	live_image servers <image-id>
+	live_image start <image-id>
 
     Options:
         --verbose|v   causes output to contain all info returned from the server
