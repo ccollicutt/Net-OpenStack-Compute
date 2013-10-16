@@ -7,7 +7,7 @@ use Carp qw(croak);
 use JSON qw(from_json to_json);
 use LWP;
 use Pod::Select;
-#use lib '/home/curtis/Net-OpenStack-Compute';
+use lib '/home/curtis/Net-OpenStack-Compute/lib/';
 use Net::OpenStack::Compute;
 use Data::Dumper
 
@@ -149,6 +149,19 @@ sub live_image {
 	    my $server = $args[0];
 	    return _get_live_image($c, $server);
 	}
+        when (['start']) {
+            die "Usage: $0 live_image start <snapshot_name> <clone_name> <windows_hostname>\n"
+                unless @args == 3;
+            my ($snapshot_name, $clone_name, $windows_hostname) = @args;
+            my $s = $compute->live_image_start(
+                $snapshot_name, { name => $clone_name });
+	    if (!defined($s)) {
+		return "Creating server $clone_name from $snapshot_name failed";
+   	    }
+ 	    	 
+            return _to_json($s) if $c->options->{verbose};
+            return "Creating server $s->{id} with password $s->{adminPass}";
+        } 
         default {
             die "Supported flavor commands are list, show, create and delete."
                 . "\n";

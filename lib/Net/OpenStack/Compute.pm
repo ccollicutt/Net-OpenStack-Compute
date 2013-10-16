@@ -221,8 +221,9 @@ sub get_flavor {
 sub live_image_start {
     my ($self, $live_image, $data) = @_;
     croak "live image id is required" unless $live_image;
-    croak "invalid data" unless $data and 'HASH' eq ref $data;
+    croak "invalid data in live_image_create" unless $data and 'HASH' eq ref $data;
     my $res = $self->_action($live_image, gc_launch => $data);
+    print Dumper($res);
     return from_json($res->content)->{servers};
 }
 
@@ -276,11 +277,10 @@ sub list_launched {
 # List live images for a server
 #
 sub list_blessed {
-    # XXX FIXME
+    # XXX FIXME - 3 args?
     my ($self, $arg, $id) = @_;
     croak "list_blessed server id is required" unless $id;
     my $res = $self->_action($id, gc_list_blessed => {});
-    #return from_json($res->content)->{status};
     return from_json($res->content);
 }
 
