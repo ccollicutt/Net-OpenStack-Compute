@@ -150,20 +150,22 @@ sub live_image {
 	    return _get_live_image($c, $server);
 	}
         when (['start']) {
-            die "Usage: $0 live_image start <snapshot_name> <clone_name> <windows_hostname>\n"
+            die "Usage: $0 live_image start <snapshot_id <clone_name> <windows_hostname>\n"
                 unless @args == 3;
             my ($snapshot_name, $clone_name, $windows_hostname) = @args;
+	    # XXX TODO - windows_hostname HAS to be 15 characters
             my $s = $compute->live_image_start(
-                $snapshot_name, { name => $clone_name });
+                $snapshot_name, { name => $clone_name, guest => { name => $windows_hostname }});
 	    if (!defined($s)) {
 		return "Creating server $clone_name from $snapshot_name failed";
    	    }
  	    	 
             return _to_json($s) if $c->options->{verbose};
-            return "Creating server $s->{id} with password $s->{adminPass}";
+            #return "Creating server $s->{id} with password $s->{adminPass}";
+            return "Creating server $s->{id}";
         } 
         default {
-            die "Supported flavor commands are list, show, create and delete."
+            die "Supported live_image commands are list and start."
                 . "\n";
         }
     }

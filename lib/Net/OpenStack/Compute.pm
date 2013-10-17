@@ -224,7 +224,8 @@ sub live_image_start {
     croak "invalid data in live_image_create" unless $data and 'HASH' eq ref $data;
     my $res = $self->_action($live_image, gc_launch => $data);
     print Dumper($res);
-    return from_json($res->content)->{servers};
+    #return from_json($res->content)->{servers};
+    return from_json($res->content);
 }
 
 # Create a new live image from a server.
@@ -281,6 +282,7 @@ sub list_blessed {
     my ($self, $arg, $id) = @_;
     croak "list_blessed server id is required" unless $id;
     my $res = $self->_action($id, gc_list_blessed => {});
+    print Dumper($res);
     return from_json($res->content);
 }
 
